@@ -425,7 +425,7 @@ export const translations = {
 
     profile: {
       subtitle: "จัดการข้อมูลส่วนตัวและความปลอดภัยของบัญชี",
-      tabs: { info: "ข้อมูลส่วนตัว", security: "ความปลอดภัย", courses: "รายวิชาที่สอน" },
+      tabs: { info: "ข้อมูลส่วนตัว", security: "รหัสผ่าน", courses: "รายวิชาที่สอน" },
       stats: { coursesTeaching: "รายวิชาที่สอน", totalStudents: "นักศึกษาทั้งหมด", yearsTeaching: "ปีที่สอน" },
       joinedSince: "เข้าร่วมระบบตั้งแต่ มิ.ย. 2561",
       infoTitle: "ข้อมูลส่วนตัว",

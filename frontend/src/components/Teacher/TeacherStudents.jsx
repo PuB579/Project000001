@@ -8,7 +8,6 @@ import {
   RotateCcw,
   LayoutGrid,
   List,
-  Plus,
   Eye,
   Pencil,
   Trash2,
@@ -154,26 +153,13 @@ export default function TeacherStudents() {
     </div>
   );
 
-  const addButton = (extra) => (
-    <button
-      onClick={() => setEditing("new")}
-      className={`${extra} items-center gap-2 bg-blue-600 hover:bg-blue-700 transition-colors text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm shadow-blue-200 dark:shadow-blue-950 shrink-0`}
-    >
-      <Plus className="w-4 h-4" />
-      {t("students.addStudent")}
-    </button>
-  );
-
   return (
-    <TeacherLayout titleIcon={Users} titleKey="nav.students" subtitleKey="students.subtitle" headerExtra={addButton("hidden md:flex")}>
+    <TeacherLayout titleIcon={Users} titleKey="nav.students" subtitleKey="students.subtitle">
       <LoadState
         loading={studentsReq.loading}
         error={studentsReq.error || pendingReq.error || actionError}
         onRetry={reload}
       />
-
-      {/* Add button for small screens */}
-      <div className="flex md:hidden justify-end">{addButton("flex")}</div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -207,20 +193,20 @@ export default function TeacherStudents() {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-700 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900"
           />
         </div>
-        <FilterSelect label={t("students.filters.faculty")} allLabel={t("students.filters.all")} value={major} onChange={(v) => { setMajor(v); setPage(1); }}>
-          {majors.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect label={t("students.filters.status")} allLabel={t("students.filters.all")} value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(1); }}>
-          {Object.keys(statusLabelKey).map((k) => (
-            <option key={k} value={k}>
-              {t(statusLabelKey[k])}
-            </option>
-          ))}
-        </FilterSelect>
+        <FilterSelect
+          label={t("students.filters.faculty")}
+          allLabel={t("students.filters.all")}
+          value={major}
+          onChange={(v) => { setMajor(v); setPage(1); }}
+          options={majors.map((m) => ({ value: m, label: m }))}
+        />
+        <FilterSelect
+          label={t("students.filters.status")}
+          allLabel={t("students.filters.all")}
+          value={statusFilter}
+          onChange={(v) => { setStatusFilter(v); setPage(1); }}
+          options={Object.keys(statusLabelKey).map((k) => ({ value: k, label: t(statusLabelKey[k]) }))}
+        />
         <button onClick={resetFilters} className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors px-3 py-2.5 shrink-0">
           <RotateCcw className="w-4 h-4" />
           {t("students.filters.reset")}
@@ -404,15 +390,27 @@ function Avatar({ name, large }) {
   );
 }
 
-function FilterSelect({ label, allLabel, value, onChange, children }) {
+// select โปร่งใสคลุมทั้งกล่อง เพื่อให้คลิกตรงไหนก็เปิดตัวเลือกได้
+function FilterSelect({ label, allLabel, value, onChange, options }) {
+  const selected = options.find((o) => o.value === value);
   return (
-    <label className="relative flex items-center gap-2 border border-slate-200 dark:border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-sm text-slate-600 dark:text-slate-300 font-medium shrink-0">
+    <label className="relative flex items-center gap-2 border border-slate-200 dark:border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-sm text-slate-600 dark:text-slate-300 font-medium shrink-0 cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-900 transition-colors">
       <span className="text-slate-400 dark:text-slate-500">{label}:</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="appearance-none bg-transparent focus:outline-none cursor-pointer">
-        <option value="">{allLabel}</option>
-        {children}
-      </select>
+      <span className="text-slate-800 dark:text-slate-100 font-semibold">{selected ? selected.label : allLabel}</span>
       <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3 pointer-events-none" />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+      >
+        <option value="">{allLabel}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }

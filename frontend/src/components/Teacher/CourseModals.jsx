@@ -22,7 +22,7 @@ const inputCls =
   "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900";
 const labelCls = "text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5";
 
-function ModalShell({ code, title, onClose, children, footer, wide }) {
+export function ModalShell({ code, title, onClose, children, footer, wide }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40" onClick={onClose} />

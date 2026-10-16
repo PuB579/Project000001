@@ -34,6 +34,8 @@ import TeacherLayout from "./TeacherLayout";
 import LoadState from "../LoadState";
 import { useAppearanceSettings } from "./useAppearanceSettings";
 import { colorOf, useTeacherData } from "./useTeacherData";
+import { ModalShell } from "./CourseModals";
+import { useApi } from "../../lib/useApi";
 import {
   addDays,
   countStatus,
@@ -56,6 +58,7 @@ export default function TeacherAttendanceReport() {
   const [dateFrom, setDateFrom] = useState(() => isoDate(addDays(new Date(), -29)));
   const [dateTo, setDateTo] = useState(() => isoDate());
   const [exportError, setExportError] = useState("");
+  const [rosterCourse, setRosterCourse] = useState(null);
   const { classes, records, loading, error, reload } = useTeacherData({ start: dateFrom, end: dateTo });
 
   const scoped = useMemo(() => {
@@ -290,7 +293,11 @@ export default function TeacherAttendanceReport() {
             </thead>
             <tbody>
               {courseSummaryTable.map((c) => (
-                <tr key={c.id} className="border-b border-slate-50 dark:border-slate-800/60 last:border-0">
+                <tr
+                  key={c.id}
+                  onClick={() => setRosterCourse(c)}
+                  className="border-b border-slate-50 dark:border-slate-800/60 last:border-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                >
                   <td className="py-3 pr-3 whitespace-nowrap">
                     <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-[11px] ${c.icon}`}>
                       {c.code.split("-").pop()}
@@ -378,7 +385,67 @@ export default function TeacherAttendanceReport() {
           </div>
         </div>
       </div>
+
+      {rosterCourse && (
+        <ClassRosterModal
+          course={rosterCourse}
+          records={byClass.get(rosterCourse.id) || []}
+          onClose={() => setRosterCourse(null)}
+        />
+      )}
     </TeacherLayout>
+  );
+}
+
+// รายชื่อนักศึกษาในคลาส พร้อมจำนวนเข้าเรียน/มาสาย/ขาดในช่วงวันที่เลือก
+function ClassRosterModal({ course, records, onClose }) {
+  const { t } = useAppearanceSettings();
+  const rosterReq = useApi(`/classes/${course.id}/students`, []);
+  const byStudent = groupBy(records, (r) => r.student_id);
+  const roster = (rosterReq.data || [])
+    .map((e) => ({ ...e, counts: countStatus(byStudent.get(e.student_id) || []) }))
+    .sort((a, b) => (a.student?.student_code || "").localeCompare(b.student?.student_code || ""));
+
+  return (
+    <ModalShell code={`${course.code} • ${course.term}`} title={course.name} onClose={onClose} wide>
+      <LoadState loading={rosterReq.loading} error={rosterReq.error} onRetry={rosterReq.reload} />
+      <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
+        {t("live.classStudents")} ({roster.length} {t("common.units.people")})
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[520px]">
+          <thead>
+            <tr className="text-left text-xs text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+              <th className="py-2 pr-3 font-medium">{t("students.table.studentId")}</th>
+              <th className="py-2 pr-3 font-medium">{t("students.table.name")}</th>
+              <th className="py-2 pr-3 font-medium text-center">{t("report.table.present")}</th>
+              <th className="py-2 pr-3 font-medium text-center">{t("report.table.late")}</th>
+              <th className="py-2 pr-3 font-medium text-center">{t("report.table.absent")}</th>
+              <th className="py-2 font-medium text-right">{t("report.table.rate")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roster.map((e) => (
+              <tr key={e.id} className="border-b border-slate-50 dark:border-slate-800/60 last:border-0">
+                <td className="py-2.5 pr-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">{e.student?.student_code || "-"}</td>
+                <td className="py-2.5 pr-3 text-slate-800 dark:text-slate-100 font-medium whitespace-nowrap">{e.student?.full_name || "-"}</td>
+                <td className="py-2.5 pr-3 text-emerald-600 dark:text-emerald-400 font-medium text-center">{e.counts.present}</td>
+                <td className="py-2.5 pr-3 text-amber-500 dark:text-amber-400 font-medium text-center">{e.counts.late}</td>
+                <td className="py-2.5 pr-3 text-red-500 dark:text-red-400 font-medium text-center">{e.counts.absent}</td>
+                <td className="py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 text-right">{e.counts.rate.toFixed(1)}%</td>
+              </tr>
+            ))}
+            {!rosterReq.loading && roster.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
+                  {t("live.noStudentsInClass")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </ModalShell>
   );
 }
 
